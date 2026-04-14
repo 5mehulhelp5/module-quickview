@@ -1,0 +1,521 @@
+<?php
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ * View Tracker Block
+ */
+declare(strict_types=1);
+
+namespace Panth\QuickView\Block\Adminhtml;
+
+use Magento\Backend\Block\Template;
+use Magento\Backend\Block\Template\Context;
+use Magento\Catalog\Helper\Image as ImageHelper;
+use Magento\Catalog\Model\ProductFactory;
+use Magento\Customer\Model\CustomerFactory;
+use Magento\Framework\Pricing\Helper\Data as PriceHelper;
+use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
+use Panth\QuickView\Model\RecentlyViewedFactory;
+use Panth\QuickView\Model\ResourceModel\RecentlyViewed\CollectionFactory as ViewedCollectionFactory;
+
+class ViewTracker extends Template
+{
+    /**
+     * @var ViewedCollectionFactory
+     */
+    private ViewedCollectionFactory $viewedCollectionFactory;
+
+    /**
+     * @var RecentlyViewedFactory
+     */
+    private RecentlyViewedFactory $viewedFactory;
+
+    /**
+     * @var ProductFactory
+     */
+    private ProductFactory $productFactory;
+
+    /**
+     * @var CustomerFactory
+     */
+    private CustomerFactory $customerFactory;
+
+    /**
+     * @var TimezoneInterface
+     */
+    private TimezoneInterface $timezone;
+
+    /**
+     * @var ImageHelper
+     */
+    private ImageHelper $imageHelper;
+
+    /**
+     * @var PriceHelper
+     */
+    private PriceHelper $priceHelper;
+
+    /**
+     * @param Context $context
+     * @param ViewedCollectionFactory $viewedCollectionFactory
+     * @param RecentlyViewedFactory $viewedFactory
+     * @param ProductFactory $productFactory
+     * @param CustomerFactory $customerFactory
+     * @param TimezoneInterface $timezone
+     * @param ImageHelper $imageHelper
+     * @param PriceHelper $priceHelper
+     * @param array $data
+     */
+    public function __construct(
+        Context $context,
+        ViewedCollectionFactory $viewedCollectionFactory,
+        RecentlyViewedFactory $viewedFactory,
+        ProductFactory $productFactory,
+        CustomerFactory $customerFactory,
+        TimezoneInterface $timezone,
+        ImageHelper $imageHelper,
+        PriceHelper $priceHelper,
+        array $data = []
+    ) {
+        $this->viewedCollectionFactory = $viewedCollectionFactory;
+        $this->viewedFactory = $viewedFactory;
+        $this->productFactory = $productFactory;
+        $this->customerFactory = $customerFactory;
+        $this->timezone = $timezone;
+        $this->imageHelper = $imageHelper;
+        $this->priceHelper = $priceHelper;
+        parent::__construct($context, $data);
+    }
+
+    /**
+     * Get view tracking statistics
+     *
+     * @return array
+     */
+    public function getViewStats(): array
+    {
+        $collection = $this->viewedCollectionFactory->create();
+
+        $total = $collection->getSize();
+
+        // Views today
+        $today = date('Y-m-d');
+        $todayViews = $this->viewedCollectionFactory->create()
+            ->addFieldToFilter('viewed_at', ['gteq' => $today . ' 00:00:00'])
+            ->getSize();
+
+        // Views this week
+        $weekStart = date('Y-m-d', strtotime('monday this week'));
+        $weekViews = $this->viewedCollectionFactory->create()
+            ->addFieldToFilter('viewed_at', ['gteq' => $weekStart . ' 00:00:00'])
+            ->getSize();
+
+        // Views this month
+        $monthStart = date('Y-m-01');
+        $monthViews = $this->viewedCollectionFactory->create()
+            ->addFieldToFilter('viewed_at', ['gteq' => $monthStart . ' 00:00:00'])
+            ->getSize();
+
+        // Unique visitors
+        $uniqueCustomers = $this->viewedCollectionFactory->create()
+            ->addFieldToFilter('customer_id', ['notnull' => true])
+            ->getSelect()
+            ->group('customer_id');
+        $uniqueCustomersCount = count($uniqueCustomers->query()->fetchAll());
+
+        $uniqueVisitors = $this->viewedCollectionFactory->create()
+            ->addFieldToFilter('visitor_id', ['notnull' => true])
+            ->getSelect()
+            ->group('visitor_id');
+        $uniqueVisitorsCount = count($uniqueVisitors->query()->fetchAll());
+
+        $totalUnique = $uniqueCustomersCount + $uniqueVisitorsCount;
+
+        return [
+            'total' => $total,
+            'today' => $todayViews,
+            'week' => $weekViews,
+            'month' => $monthViews,
+            'unique_visitors' => $totalUnique
+        ];
+    }
+
+    /**
+     * Get most viewed products
+     *
+     * @param int $limit
+     * @return array
+     */
+    public function getMostViewedProducts(int $limit = 10): array
+    {
+        $collection = $this->viewedCollectionFactory->create();
+        $collection->getSelect()
+            ->columns(['view_count' => 'COUNT(*)'])
+            ->group('product_id')
+            ->order('view_count DESC')
+            ->limit($limit);
+
+        $products = [];
+        foreach ($collection as $view) {
+            try {
+                $product = $this->productFactory->create()->load($view->getProductId());
+                if ($product->getId()) {
+                    $products[] = [
+                        'name' => $product->getName(),
+                        'sku' => $product->getSku(),
+                        'count' => $view->getData('view_count'),
+                        'product_id' => $view->getProductId(),
+                        'url' => $this->getUrl('catalog/product/edit', ['id' => $view->getProductId()])
+                    ];
+                }
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
+
+        return $products;
+    }
+
+    /**
+     * Get recent views
+     *
+     * @param int $limit
+     * @return array
+     */
+    public function getRecentViews(int $limit = 20): array
+    {
+        $collection = $this->viewedCollectionFactory->create()
+            ->setOrder('viewed_at', 'DESC')
+            ->setPageSize($limit);
+
+        $recentViews = [];
+        foreach ($collection as $view) {
+            try {
+                $product = $this->productFactory->create()->load($view->getProductId());
+                $viewerName = 'Guest';
+
+                if ($view->getCustomerId()) {
+                    $customer = $this->customerFactory->create()->load($view->getCustomerId());
+                    $viewerName = $customer->getName();
+                } elseif ($view->getVisitorId()) {
+                    $viewerName = 'Visitor #' . substr((string)$view->getVisitorId(), 0, 8);
+                }
+
+                $recentViews[] = [
+                    'view_id' => $view->getId(),
+                    'product_name' => $product->getName() ?: 'Unknown Product',
+                    'product_sku' => $product->getSku(),
+                    'viewer_name' => $viewerName,
+                    'viewed_at' => $view->getViewedAt(),
+                    'time_ago' => $this->getTimeAgo($view->getViewedAt()),
+                    'product_url' => $this->getUrl('catalog/product/edit', ['id' => $view->getProductId()])
+                ];
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
+
+        return $recentViews;
+    }
+
+    /**
+     * Get view trend data for charts (last 30 days)
+     *
+     * @return array
+     */
+    public function getViewTrendData(): array
+    {
+        $days = [];
+        $viewData = [];
+        $uniqueData = [];
+
+        for ($i = 29; $i >= 0; $i--) {
+            $date = date('Y-m-d', strtotime("-{$i} days"));
+            $days[] = date('M d', strtotime("-{$i} days"));
+
+            $viewCount = $this->viewedCollectionFactory->create()
+                ->addFieldToFilter('viewed_at', ['gteq' => $date . ' 00:00:00'])
+                ->addFieldToFilter('viewed_at', ['lteq' => $date . ' 23:59:59'])
+                ->getSize();
+            $viewData[] = $viewCount;
+
+            $uniqueProducts = $this->viewedCollectionFactory->create()
+                ->addFieldToFilter('viewed_at', ['gteq' => $date . ' 00:00:00'])
+                ->addFieldToFilter('viewed_at', ['lteq' => $date . ' 23:59:59']);
+            $uniqueProducts->getSelect()->group('product_id');
+            $uniqueCount = count($uniqueProducts->getColumnValues('product_id'));
+            $uniqueData[] = $uniqueCount;
+        }
+
+        return [
+            'labels' => $days,
+            'view_data' => $viewData,
+            'unique_data' => $uniqueData
+        ];
+    }
+
+    /**
+     * Get hourly distribution for today
+     *
+     * @return array
+     */
+    public function getHourlyDistribution(): array
+    {
+        $hours = [];
+        $viewCounts = [];
+        $today = date('Y-m-d');
+
+        for ($h = 0; $h < 24; $h++) {
+            $hour = str_pad((string)$h, 2, '0', STR_PAD_LEFT);
+            $hours[] = $hour . ':00';
+
+            $count = $this->viewedCollectionFactory->create()
+                ->addFieldToFilter('viewed_at', ['gteq' => $today . ' ' . $hour . ':00:00'])
+                ->addFieldToFilter('viewed_at', ['lt' => $today . ' ' . $hour . ':59:59'])
+                ->getSize();
+            $viewCounts[] = $count;
+        }
+
+        return [
+            'labels' => $hours,
+            'data' => $viewCounts
+        ];
+    }
+
+    /**
+     * Get top customers by views
+     *
+     * @param int $limit
+     * @return array
+     */
+    public function getTopCustomers(int $limit = 10): array
+    {
+        $collection = $this->viewedCollectionFactory->create();
+        $collection->addFieldToFilter('customer_id', ['notnull' => true]);
+        $collection->getSelect()
+            ->columns(['view_count' => 'COUNT(*)'])
+            ->group('customer_id')
+            ->order('view_count DESC')
+            ->limit($limit);
+
+        $customers = [];
+        foreach ($collection as $view) {
+            try {
+                $customer = $this->customerFactory->create()->load($view->getCustomerId());
+                if ($customer->getId()) {
+                    $customers[] = [
+                        'name' => $customer->getName(),
+                        'email' => $customer->getEmail(),
+                        'count' => $view->getData('view_count'),
+                        'customer_id' => $view->getCustomerId(),
+                        'url' => $this->getUrl('customer/index/edit', ['id' => $view->getCustomerId()])
+                    ];
+                }
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
+
+        return $customers;
+    }
+
+    /**
+     * Get time ago from date
+     *
+     * @param string|null $datetime
+     * @return string
+     */
+    public function getTimeAgo(?string $datetime): string
+    {
+        if (!$datetime) {
+            return 'Unknown';
+        }
+
+        $time = strtotime($datetime);
+        $diff = time() - $time;
+
+        if ($diff < 60) {
+            return 'Just now';
+        } elseif ($diff < 3600) {
+            $mins = (int)floor($diff / 60);
+            return $mins . ' minute' . ($mins > 1 ? 's' : '') . ' ago';
+        } elseif ($diff < 86400) {
+            $hours = (int)floor($diff / 3600);
+            return $hours . ' hour' . ($hours > 1 ? 's' : '') . ' ago';
+        } elseif ($diff < 604800) {
+            $days = (int)floor($diff / 86400);
+            return $days . ' day' . ($days > 1 ? 's' : '') . ' ago';
+        } else {
+            return date('M d, Y H:i', $time);
+        }
+    }
+
+    /**
+     * Get dashboard URL
+     *
+     * @return string
+     */
+    public function getDashboardUrl(): string
+    {
+        return $this->getUrl('quickview/dashboard/index');
+    }
+
+    /**
+     * Get view record by ID
+     *
+     * @param int|string|null $id
+     * @return \Panth\QuickView\Model\RecentlyViewed|null
+     */
+    public function getView($id)
+    {
+        if (!$id) {
+            return null;
+        }
+
+        try {
+            $viewRecord = $this->viewedFactory->create()->load($id);
+            return $viewRecord->getId() ? $viewRecord : null;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get product information
+     *
+     * @param int|null $productId
+     * @return array|null
+     */
+    public function getProductInfo($productId): ?array
+    {
+        if (!$productId) {
+            return null;
+        }
+
+        try {
+            $product = $this->productFactory->create()->load($productId);
+            if (!$product->getId()) {
+                return null;
+            }
+
+            $productImage = $this->imageHelper->init($product, 'product_base_image')->getUrl();
+
+            $finalPrice = $product->getFinalPrice();
+            $formattedPrice = $this->priceHelper->currency($finalPrice, true, false);
+
+            return [
+                'id' => $product->getId(),
+                'name' => $product->getName(),
+                'sku' => $product->getSku(),
+                'price' => $formattedPrice,
+                'image' => $productImage,
+                'url' => $product->getProductUrl(),
+                'admin_url' => $this->getUrl('catalog/product/edit', ['id' => $product->getId()]),
+                'type' => $product->getTypeId(),
+                'status' => $product->getStatus(),
+                'visibility' => $product->getVisibility()
+            ];
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get customer information
+     *
+     * @param int|null $customerId
+     * @return array|null
+     */
+    public function getCustomerInfo($customerId): ?array
+    {
+        if (!$customerId) {
+            return null;
+        }
+
+        try {
+            $customer = $this->customerFactory->create()->load($customerId);
+            if (!$customer->getId()) {
+                return null;
+            }
+
+            return [
+                'id' => $customer->getId(),
+                'name' => $customer->getName(),
+                'email' => $customer->getEmail(),
+                'group_id' => $customer->getGroupId(),
+                'created_at' => $customer->getCreatedAt(),
+                'admin_url' => $this->getUrl('customer/index/edit', ['id' => $customer->getId()])
+            ];
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get view history for a product
+     *
+     * @param int $productId
+     * @param int $limit
+     * @return array
+     */
+    public function getProductViewHistory(int $productId, int $limit = 10): array
+    {
+        $collection = $this->viewedCollectionFactory->create()
+            ->addFieldToFilter('product_id', $productId)
+            ->setOrder('viewed_at', 'DESC')
+            ->setPageSize($limit);
+
+        $history = [];
+        foreach ($collection as $view) {
+            $viewerName = 'Guest';
+            if ($view->getCustomerId()) {
+                $customer = $this->customerFactory->create()->load($view->getCustomerId());
+                $viewerName = $customer->getName();
+            } elseif ($view->getVisitorId()) {
+                $viewerName = 'Visitor #' . substr((string)$view->getVisitorId(), 0, 8);
+            }
+
+            $history[] = [
+                'id' => $view->getId(),
+                'viewer_name' => $viewerName,
+                'customer_id' => $view->getCustomerId(),
+                'visitor_id' => $view->getVisitorId(),
+                'viewed_at' => $view->getViewedAt(),
+                'time_ago' => $this->getTimeAgo($view->getViewedAt()),
+                'detail_url' => $this->getUrl('quickview/viewtracker/view', ['id' => $view->getId()])
+            ];
+        }
+
+        return $history;
+    }
+
+    /**
+     * Get view history for a customer
+     *
+     * @param int $customerId
+     * @param int $limit
+     * @return array
+     */
+    public function getCustomerViewHistory(int $customerId, int $limit = 10): array
+    {
+        $collection = $this->viewedCollectionFactory->create()
+            ->addFieldToFilter('customer_id', $customerId)
+            ->setOrder('viewed_at', 'DESC')
+            ->setPageSize($limit);
+
+        $history = [];
+        foreach ($collection as $view) {
+            $product = $this->productFactory->create()->load($view->getProductId());
+
+            $history[] = [
+                'id' => $view->getId(),
+                'product_name' => $product->getName() ?: 'Unknown Product',
+                'product_sku' => $product->getSku(),
+                'viewed_at' => $view->getViewedAt(),
+                'time_ago' => $this->getTimeAgo($view->getViewedAt()),
+                'detail_url' => $this->getUrl('quickview/viewtracker/view', ['id' => $view->getId()])
+            ];
+        }
+
+        return $history;
+    }
+}

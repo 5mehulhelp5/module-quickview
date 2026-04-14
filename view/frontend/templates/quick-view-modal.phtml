@@ -1,0 +1,209 @@
+<?php
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ * Quick View Modal — clean, centered, responsive
+ * @var \Panth\QuickView\Block\QuickView $block
+ */
+if (!$block->isEnabled()) return;
+$quickViewUrl = $block->getQuickViewUrl();
+?>
+
+<style>
+.qv-overlay { position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px); }
+.qv-wrapper { position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px; }
+.qv-modal { position:relative;background:#fff;border-radius:16px;box-shadow:0 25px 60px rgba(0,0,0,0.3);width:100%;max-width:880px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column; }
+.qv-close { position:absolute;top:12px;right:12px;z-index:10;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:none;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);cursor:pointer;color:#525252; }
+.qv-close:hover { background:#f5f5f5; }
+.qv-grid { display:grid;grid-template-columns:1fr 1fr; }
+.qv-img-area { padding:24px;background:#f5f5f5;display:flex;flex-direction:column;gap:10px; }
+.qv-img-main { aspect-ratio:1;border-radius:12px;overflow:hidden;background:#fff; }
+.qv-img-main img { width:100%;height:100%;object-fit:contain; }
+.qv-thumbs { display:flex;gap:6px;overflow-x:auto;padding-bottom:4px; }
+.qv-thumb { flex-shrink:0;width:52px;height:52px;border-radius:8px;overflow:hidden;cursor:pointer;background:#fff;padding:2px;border:2px solid #e5e5e5; }
+.qv-thumb.active { border-color:var(--color-primary, #0D9488); }
+.qv-thumb img { width:100%;height:100%;object-fit:contain;border-radius:6px; }
+.qv-info { padding:24px 24px 24px 20px;display:flex;flex-direction:column; }
+.qv-name { font-size:1.2rem;font-weight:700;color:#171717;margin:0 0 6px;line-height:1.3;padding-right:28px; }
+.qv-sku { font-size:0.7rem;color:#a3a3a3;margin:0 0 14px;text-transform:uppercase;letter-spacing:0.5px; }
+.qv-price { margin-bottom:14px;font-size:1.5rem;font-weight:700;color:#171717; }
+.qv-stock { display:inline-flex;align-items:center;gap:5px;font-size:0.75rem;font-weight:500;padding:3px 10px;border-radius:20px;margin-bottom:12px; }
+.qv-stock.in { color:#16a34a;background:#f0fdf4; }
+.qv-stock.out { color:#dc2626;background:#fef2f2; }
+.qv-desc { font-size:0.8rem;line-height:1.6;color:#525252;margin:0 0 12px; }
+.qv-cart-row { display:flex;align-items:stretch;gap:0;border-radius:10px;overflow:hidden;border:1px solid #e5e5e5; }
+.qv-qty-wrap { display:flex;align-items:center;background:#f5f5f5;flex-shrink:0; }
+.qv-qty-btn { width:32px;height:42px;border:none;background:transparent;cursor:pointer;font-size:1rem;color:#171717;display:flex;align-items:center;justify-content:center;transition:background 0.15s; }
+.qv-qty-btn:hover { background:#e5e5e5; }
+.qv-qty-input { width:32px;height:42px;border:none;text-align:center;font-size:0.85rem;font-weight:600;outline:none;background:transparent;-moz-appearance:textfield; }
+.qv-qty-input::-webkit-outer-spin-button, .qv-qty-input::-webkit-inner-spin-button { -webkit-appearance:none;margin:0; }
+.qv-btn-cart { flex:1;padding:10px 16px;border:none;font-size:0.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;color:#fff;background:var(--color-primary, #0D9488);transition:all 0.2s; }
+.qv-btn-cart:hover { filter:brightness(0.9); }
+.qv-btn-cart.success { background:#16a34a; }
+.qv-btn-cart:disabled { opacity:0.7;cursor:not-allowed; }
+.qv-btn-cart svg { width:16px;height:16px;flex-shrink:0; }
+.qv-btn-options { display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:11px;border:none;border-radius:10px;font-size:0.85rem;font-weight:600;text-decoration:none;color:#fff;background:var(--color-primary, #0D9488); }
+.qv-link { display:block;text-align:center;margin-top:10px;font-size:0.75rem;color:var(--color-primary, #0D9488);text-decoration:none;font-weight:500; }
+.qv-note { font-size:0.75rem;color:#525252;margin:0 0 10px; }
+.qv-loading { padding:80px;text-align:center; }
+.qv-loading svg { width:36px;height:36px;margin:0 auto 12px;color:var(--color-primary, #0D9488); }
+.qv-loading p { color:#525252;font-size:0.85rem; }
+@media (max-width: 767px) {
+    .qv-wrapper { padding:8px !important;align-items:center !important; }
+    .qv-modal { max-width:100% !important;max-height:85vh !important;border-radius:14px !important; }
+    .qv-grid { grid-template-columns:1fr !important; }
+    .qv-img-area { padding:12px !important;max-height:200px; }
+    .qv-img-main { aspect-ratio:auto !important;height:170px; }
+    .qv-thumbs { display:none !important; }
+    .qv-info { padding:12px 16px 16px !important; }
+    .qv-name { font-size:1rem;padding-right:0; }
+    .qv-sku { font-size:0.65rem;margin-bottom:8px; }
+    .qv-price { margin-bottom:6px; }
+    .qv-stock { margin-bottom:8px; }
+    .qv-desc { font-size:0.8rem;line-height:1.5;margin-bottom:10px;max-height:60px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical; }
+    .qv-close { top:8px;right:8px;width:30px;height:30px; }
+}
+</style>
+
+<div x-data="quickViewModal()"
+     @open-quick-view.window="openModal($event.detail.productId)"
+     @keydown.escape.window="show && closeModal()">
+
+    <div x-show="show" x-transition style="display:none;">
+            <!-- Overlay -->
+            <div class="qv-overlay" @click="closeModal()"></div>
+
+            <!-- Modal Wrapper -->
+            <div class="qv-wrapper">
+                <div class="qv-modal" @click.stop>
+
+                    <!-- Close -->
+                    <button class="qv-close" @click="closeModal()">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+
+                    <!-- Loading -->
+                    <div x-show="loading" class="qv-loading">
+                        <svg class="animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle style="opacity:0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path style="opacity:0.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p>Loading product...</p>
+                    </div>
+
+                    <!-- Error -->
+                    <div x-show="error && !loading" style="padding:60px;text-align:center;">
+                        <p style="color:#525252;" x-text="error"></p>
+                    </div>
+
+                    <!-- Product -->
+                    <div x-show="product && !loading" style="overflow-y:auto;flex:1;">
+                        <div class="qv-grid">
+                            <!-- Image -->
+                            <div class="qv-img-area">
+                                <div class="qv-img-main">
+                                    <img :src="mainImage" alt="Product image" :alt="product?.name" />
+                                </div>
+                                <div x-show="product?.images?.length > 1" class="qv-thumbs">
+                                    <template x-for="(img, i) in (product?.images || [])" :key="i">
+                                        <button class="qv-thumb" :class="mainImage === img.url && 'active'" @click="mainImage = img.url">
+                                            <img :src="img.thumb_url || img.url" alt="Product thumbnail" :alt="img.alt || product?.name || 'Product image'" />
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- Info -->
+                            <div class="qv-info">
+                                <p class="qv-name" x-text="product?.name"></p>
+                                <p class="qv-sku">SKU: <span x-text="product?.sku"></span></p>
+                                <div class="qv-price" x-html="product?.price_html"></div>
+
+                                <span x-show="product?.in_stock" class="qv-stock in">
+                                    <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                    In Stock
+                                </span>
+                                <span x-show="!product?.in_stock" class="qv-stock out">Out of Stock</span>
+
+                                <p x-show="product?.short_description && product.short_description.length > 0" x-text="product?.short_description" class="qv-desc"></p>
+
+                                <div style="flex:1;min-height:8px;"></div>
+
+                                <!-- Simple: Combined Qty + Add to Cart -->
+                                <div x-show="product?.in_stock && (product?.type_id === 'simple' || product?.type_id === 'virtual')" class="qv-cart-row">
+                                    <div class="qv-qty-wrap">
+                                        <button class="qv-qty-btn" type="button" @click="qty > 1 && qty--">−</button>
+                                        <input class="qv-qty-input" type="number" x-model.number="qty" min="1" max="99" />
+                                        <button class="qv-qty-btn" type="button" @click="qty++">+</button>
+                                    </div>
+                                    <button class="qv-btn-cart" :class="cartSuccess && 'success'" :disabled="addingToCart" type="button" @click="addToCart()">
+                                        <template x-if="!addingToCart && !cartSuccess">
+                                            <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
+                                                <svg width="16" height="16" style="flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
+                                                Add to Cart
+                                            </span>
+                                        </template>
+                                        <template x-if="addingToCart">
+                                            <svg class="animate-spin" width="16" height="16" fill="none" viewBox="0 0 24 24"><circle style="opacity:0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path style="opacity:0.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+                                        </template>
+                                        <template x-if="cartSuccess">
+                                            <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
+                                                <svg width="16" height="16" style="flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                                Added!
+                                            </span>
+                                        </template>
+                                    </button>
+                                </div>
+
+                                <!-- Configurable/Bundle: Select Options -->
+                                <div x-show="product?.in_stock && product?.type_id !== 'simple' && product?.type_id !== 'virtual'">
+                                    <p class="qv-note">This product has options. Please visit the product page to select.</p>
+                                    <a :href="product?.url" class="qv-btn-options">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                                        Select Options
+                                    </a>
+                                </div>
+
+                                <a :href="product?.url" class="qv-link">View Full Details →</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function quickViewModal() {
+    return {
+        show: false, loading: false, error: null, product: null,
+        mainImage: '', qty: 1, addingToCart: false, cartSuccess: false,
+        openModal(productId) {
+            this.show = true; this.loading = true; this.error = null;
+            this.product = null; this.qty = 1; this.cartSuccess = false;
+            document.body.style.overflow = 'hidden';
+            fetch('<?= $block->escapeJs($quickViewUrl) ?>?id=' + productId, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success && data.product) { this.product = data.product; this.mainImage = data.product.images?.[0]?.url || ''; }
+                    else { this.error = data.message || 'Product not found.'; }
+                })
+                .catch(() => this.error = 'Failed to load product.')
+                .finally(() => this.loading = false);
+        },
+        closeModal() { this.show = false; document.body.style.overflow = ''; },
+        async addToCart() {
+            this.addingToCart = true;
+            try {
+                const fd = new FormData();
+                fd.append('product', this.product.id);
+                fd.append('qty', this.qty);
+                fd.append('form_key', this.product.form_key);
+                const r = await fetch('/checkout/cart/add/', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                if (r.ok || r.redirected) { this.cartSuccess = true; window.dispatchEvent(new CustomEvent('reload-customer-section-data')); setTimeout(() => this.closeModal(), 1200); }
+            } catch(e) {}
+            finally { this.addingToCart = false; }
+        }
+    };
+}
+</script>

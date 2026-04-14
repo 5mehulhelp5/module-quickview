@@ -1,0 +1,515 @@
+<?php
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ * View Tracker Detail Template
+ *
+ * @var $block \Panth\QuickView\Block\Adminhtml\ViewTracker
+ */
+
+$viewId = $block->getRequest()->getParam('id');
+$viewRecord = $block->getView($viewId);
+
+if (!$viewRecord) {
+    echo '<p>View record not found.</p>';
+    return;
+}
+
+$productInfo = $block->getProductInfo($viewRecord->getProductId());
+$customerInfo = $block->getCustomerInfo($viewRecord->getCustomerId());
+$productHistory = $block->getProductViewHistory($viewRecord->getProductId(), 10);
+
+$viewerName = 'Guest';
+$viewerType = 'guest';
+if ($viewRecord->getCustomerId()) {
+    $viewerName = $customerInfo ? $customerInfo['name'] : 'Unknown Customer';
+    $viewerType = 'customer';
+} elseif ($viewRecord->getVisitorId()) {
+    $viewerName = 'Visitor #' . substr($viewRecord->getVisitorId(), 0, 8);
+    $viewerType = 'visitor';
+}
+?>
+
+<style>
+    .view-detail-container {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background: #f8f8f8;
+        padding: 2rem;
+        min-height: 100vh;
+    }
+
+    .detail-header {
+        background: white;
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .detail-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #eb5202 0%, #f38b00 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0;
+    }
+
+    .back-button {
+        background: linear-gradient(135deg, #eb5202 0%, #f38b00 100%);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        font-weight: 600;
+        transition: transform 0.2s, box-shadow 0.2s;
+        display: inline-block;
+    }
+
+    .back-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    @media (max-width: 1200px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .detail-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 2rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    }
+
+    .card-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 0 0 1.5rem 0;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f3f4f6;
+        display: flex;
+        align-items: center;
+    }
+
+    .card-icon {
+        font-size: 1.75rem;
+        margin-right: 0.75rem;
+    }
+
+    .product-showcase {
+        display: flex;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .product-image {
+        flex-shrink: 0;
+    }
+
+    .product-image img {
+        width: 200px;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 0.5rem;
+        border: 2px solid #f3f4f6;
+    }
+
+    .product-details {
+        flex: 1;
+    }
+
+    .detail-row {
+        margin-bottom: 1.5rem;
+    }
+
+    .detail-label {
+        color: #6b7280;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .detail-value {
+        color: #1f2937;
+        font-size: 1.125rem;
+        font-weight: 500;
+        margin: 0;
+    }
+
+    .detail-value.large {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #eb5202;
+    }
+
+    .detail-link {
+        color: #eb5202;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .detail-link:hover {
+        color: #f38b00;
+        text-decoration: underline;
+    }
+
+    .badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #eb5202 0%, #f38b00 100%);
+        color: white;
+        padding: 0.375rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .badge.success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .badge.warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+
+    .badge.info {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .stat-box {
+        background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        border: 2px solid #f3f4f6;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .stat-box:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.5rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(180deg, #eb5202 0%, #f38b00 100%);
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 2rem;
+    }
+
+    .timeline-item:last-child {
+        padding-bottom: 0;
+    }
+
+    .timeline-dot {
+        position: absolute;
+        left: -1.5rem;
+        top: 0.25rem;
+        width: 1rem;
+        height: 1rem;
+        border-radius: 50%;
+        background: white;
+        border: 3px solid #eb5202;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+
+    .timeline-content {
+        background: #f9fafb;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border-left: 3px solid #eb5202;
+    }
+
+    .timeline-title {
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .timeline-meta {
+        color: #6b7280;
+        font-size: 0.875rem;
+        margin: 0;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #9ca3af;
+    }
+
+    .full-width {
+        grid-column: 1 / -1;
+    }
+</style>
+
+<div class="view-detail-container">
+    <!-- Header -->
+    <div class="detail-header">
+        <h1>View Details #<?= (int)$viewId ?></h1>
+        <a href="<?= $escaper->escapeUrl($block->getUrl('quickview/viewtracker/index')) ?>" class="back-button">
+            Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Product Information -->
+    <?php if ($productInfo): ?>
+    <div class="content-grid">
+        <div class="detail-card full-width">
+            <h2 class="card-title">
+                <span class="card-icon">📦</span>
+                Product Information
+            </h2>
+
+            <div class="product-showcase">
+                <div class="product-image">
+                    <img src="<?= $escaper->escapeUrl($productInfo['image']) ?>"
+                         alt="<?= $escaper->escapeHtmlAttr($productInfo['name']) ?>">
+                </div>
+
+                <div class="product-details">
+                    <div class="detail-row">
+                        <p class="detail-label">Product Name</p>
+                        <p class="detail-value large">
+                            <a href="<?= $escaper->escapeUrl($productInfo['admin_url']) ?>"
+                               class="detail-link" target="_blank">
+                                <?= $escaper->escapeHtml($productInfo['name']) ?>
+                            </a>
+                        </p>
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="stat-box">
+                            <p class="detail-label">SKU</p>
+                            <p class="detail-value"><?= $escaper->escapeHtml($productInfo['sku']) ?></p>
+                        </div>
+
+                        <div class="stat-box">
+                            <p class="detail-label">Price</p>
+                            <p class="detail-value"><?= $escaper->escapeHtml($productInfo['price']) ?></p>
+                        </div>
+
+                        <div class="stat-box">
+                            <p class="detail-label">Product ID</p>
+                            <p class="detail-value">#<?= (int)$productInfo['id'] ?></p>
+                        </div>
+
+                        <div class="stat-box">
+                            <p class="detail-label">Type</p>
+                            <p class="detail-value"><?= $escaper->escapeHtml($productInfo['type']) ?></p>
+                        </div>
+                    </div>
+
+                    <div class="detail-row" style="margin-top: 1.5rem;">
+                        <a href="<?= $escaper->escapeUrl($productInfo['url']) ?>"
+                           class="detail-link" target="_blank">
+                            View on Storefront
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- View Details and Viewer Information -->
+    <div class="content-grid">
+        <div class="detail-card">
+            <h2 class="card-title">
+                <span class="card-icon">👁️</span>
+                View Details
+            </h2>
+
+            <div class="info-grid">
+                <div class="stat-box">
+                    <p class="detail-label">View ID</p>
+                    <p class="detail-value">#<?= (int)$viewRecord->getId() ?></p>
+                </div>
+
+                <div class="stat-box">
+                    <p class="detail-label">Viewed At</p>
+                    <p class="detail-value">
+                        <?= $escaper->escapeHtml(date('M d, Y H:i:s', strtotime($viewRecord->getViewedAt()))) ?>
+                    </p>
+                </div>
+
+                <div class="stat-box">
+                    <p class="detail-label">Time Ago</p>
+                    <p class="detail-value">
+                        <?= $escaper->escapeHtml($block->getTimeAgo($viewRecord->getViewedAt())) ?>
+                    </p>
+                </div>
+
+                <div class="stat-box">
+                    <p class="detail-label">Viewer Type</p>
+                    <p class="detail-value">
+                        <span class="badge <?= $viewerType === 'customer' ? 'success' : 'info' ?>">
+                            <?= $escaper->escapeHtml(ucfirst($viewerType)) ?>
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-card">
+            <h2 class="card-title">
+                <span class="card-icon"><?= $viewerType === 'customer' ? '👤' : '👥' ?></span>
+                Viewer Information
+            </h2>
+
+            <div class="detail-row">
+                <p class="detail-label">Viewer Name</p>
+                <p class="detail-value large"><?= $escaper->escapeHtml($viewerName) ?></p>
+            </div>
+
+            <?php if ($customerInfo): ?>
+                <div class="info-grid">
+                    <div class="stat-box">
+                        <p class="detail-label">Customer ID</p>
+                        <p class="detail-value">#<?= (int)$customerInfo['id'] ?></p>
+                    </div>
+
+                    <div class="stat-box">
+                        <p class="detail-label">Email</p>
+                        <p class="detail-value" style="font-size: 0.9rem;">
+                            <?= $escaper->escapeHtml($customerInfo['email']) ?>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <a href="<?= $escaper->escapeUrl($customerInfo['admin_url']) ?>"
+                       class="detail-link" target="_blank">
+                        View Customer Profile
+                    </a>
+                </div>
+            <?php elseif ($viewRecord->getVisitorId()): ?>
+                <div class="detail-row">
+                    <p class="detail-label">Visitor ID</p>
+                    <p class="detail-value"><?= $escaper->escapeHtml($viewRecord->getVisitorId()) ?></p>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Product View History Timeline -->
+    <?php if (!empty($productHistory)): ?>
+    <div class="content-grid">
+        <div class="detail-card full-width">
+            <h2 class="card-title">
+                <span class="card-icon">📅</span>
+                Product View History
+                <span class="badge" style="margin-left: auto; font-size: 0.875rem;">
+                    <?= count($productHistory) ?> Views
+                </span>
+            </h2>
+
+            <div class="timeline">
+                <?php foreach ($productHistory as $historyItem): ?>
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <p class="timeline-title">
+                            <?= $escaper->escapeHtml($historyItem['viewer_name']) ?>
+                            <?php if ($historyItem['id'] == $viewId): ?>
+                                <span class="badge success" style="margin-left: 0.5rem; font-size: 0.75rem;">
+                                    Current View
+                                </span>
+                            <?php endif; ?>
+                        </p>
+                        <p class="timeline-meta">
+                            <?= $escaper->escapeHtml($historyItem['time_ago']) ?> -
+                            <?= $escaper->escapeHtml(date('M d, Y H:i:s', strtotime($historyItem['viewed_at']))) ?>
+                            <?php if ($historyItem['id'] != $viewId): ?>
+                                | <a href="<?= $escaper->escapeUrl($historyItem['detail_url']) ?>" class="detail-link">
+                                    View Details
+                                </a>
+                            <?php endif; ?>
+                        </p>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Customer View History (if applicable) -->
+    <?php if ($customerInfo):
+        $customerHistory = $block->getCustomerViewHistory($viewRecord->getCustomerId(), 10);
+        if (!empty($customerHistory)):
+    ?>
+    <div class="content-grid">
+        <div class="detail-card full-width">
+            <h2 class="card-title">
+                <span class="card-icon">🛒</span>
+                Customer's Recent Views
+                <span class="badge" style="margin-left: auto; font-size: 0.875rem;">
+                    <?= count($customerHistory) ?> Products
+                </span>
+            </h2>
+
+            <div class="timeline">
+                <?php foreach ($customerHistory as $historyItem): ?>
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <p class="timeline-title">
+                            <?= $escaper->escapeHtml($historyItem['product_name']) ?>
+                            <?php if ($historyItem['id'] == $viewId): ?>
+                                <span class="badge success" style="margin-left: 0.5rem; font-size: 0.75rem;">
+                                    Current View
+                                </span>
+                            <?php endif; ?>
+                        </p>
+                        <p class="timeline-meta">
+                            SKU: <?= $escaper->escapeHtml($historyItem['product_sku']) ?> -
+                            <?= $escaper->escapeHtml($historyItem['time_ago']) ?>
+                            <?php if ($historyItem['id'] != $viewId): ?>
+                                | <a href="<?= $escaper->escapeUrl($historyItem['detail_url']) ?>" class="detail-link">
+                                    View Details
+                                </a>
+                            <?php endif; ?>
+                        </p>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; endif; ?>
+</div>

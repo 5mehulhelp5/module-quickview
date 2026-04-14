@@ -1,0 +1,31 @@
+<?php
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ * Product View Tracker — POSTs to AJAX endpoint on product page load
+ *
+ * @var $block \Panth\QuickView\Block\ProductViewTracker
+ */
+$product = $block->getCurrentProduct();
+if (!$product || !$product->getId()) {
+    return;
+}
+$productId = (int)$product->getId();
+$trackUrl = $block->getUrl('quickview/track/view');
+?>
+
+<script>
+(function() {
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            fetch('<?= $block->escapeJs($trackUrl) ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ product_id: <?= (int)$productId ?> })
+            }).catch(function() {});
+        }, 500);
+    });
+})();
+</script>
