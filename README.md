@@ -173,7 +173,7 @@ bin/magento cache:flush
 
 ### Manual Installation via ZIP
 
-1. Download the latest release from [Packagist](https://packagist.org/packages/mage2kishan/module-quickview) or the [Adobe Commerce Marketplace](https://commercemarketplace.adobe.com).
+1. Download the latest release from [Packagist](https://packagist.org/packages/mage2kishan/module-quickview) or from the [product page](https://kishansavaliya.com/magento-2-quickview.html).
 2. Extract it to `app/code/Panth/QuickView/` in your Magento install.
 3. Make sure `Panth_Core` is installed too (required dependency).
 4. Run the commands above starting from `bin/magento module:enable`.
@@ -311,22 +311,23 @@ Built and maintained by **Kishan Savaliya** ([kishansavaliya.com](https://kishan
 
 **Panth Infotech** is a Magento 2 development agency that builds high quality, security focused extensions and themes for both Hyva and Luma storefronts. The extension suite covers SEO, performance, checkout, product presentation, customer engagement, and store management, with each module built to MEQP standards and tested across Magento 2.4.4 to 2.4.8.
 
-Browse the full extension catalog on the [Adobe Commerce Marketplace](https://commercemarketplace.adobe.com) or on [Packagist](https://packagist.org/packages/mage2kishan/).
+Browse the full extension catalog on our [Magento extensions page](https://kishansavaliya.com/magento-extensions.html) or on [Packagist](https://packagist.org/packages/mage2kishan/).
 
 ---
 
 ## Quick Links
 
-- 🛒 **Product Page:** [kishansavaliya.com/magento-2-quickview.html](https://kishansavaliya.com/magento-2-quickview.html)
-- 🌐 **Website:** [kishansavaliya.com](https://kishansavaliya.com)
-- 💬 **Get a Quote:** [kishansavaliya.com/get-quote](https://kishansavaliya.com/get-quote)
-- 👨‍💻 **Upwork Profile (Top Rated Plus):** [upwork.com/freelancers/~016dd1767321100e21](https://www.upwork.com/freelancers/~016dd1767321100e21)
-- 🏢 **Upwork Agency:** [upwork.com/agencies/1881421506131960778](https://www.upwork.com/agencies/1881421506131960778/)
-- 📦 **Packagist:** [packagist.org/packages/mage2kishan/module-quickview](https://packagist.org/packages/mage2kishan/module-quickview)
-- 🐙 **GitHub:** [github.com/mage2sk/module-quickview](https://github.com/mage2sk/module-quickview)
-- 🛒 **Adobe Marketplace:** [commercemarketplace.adobe.com](https://commercemarketplace.adobe.com)
-- 📧 **Email:** kishansavaliyakb@gmail.com
-- 📱 **WhatsApp:** +91 84012 70422
+| Resource | Link |
+|---|---|
+| 🛒 **Product Page** | [magento-2-quickview.html](https://kishansavaliya.com/magento-2-quickview.html) |
+| 📦 **Packagist** | [mage2kishan/module-quickview](https://packagist.org/packages/mage2kishan/module-quickview) |
+| 🐙 **GitHub** | [mage2sk/module-quickview](https://github.com/mage2sk/module-quickview) |
+| 🌐 **Website** | [kishansavaliya.com](https://kishansavaliya.com) |
+| 💬 **Free Quote** | [kishansavaliya.com/get-quote](https://kishansavaliya.com/get-quote) |
+| 👨‍💻 **Upwork (Top Rated Plus)** | [Hire Kishan Savaliya](https://www.upwork.com/freelancers/~016dd1767321100e21) |
+| 🏢 **Upwork Agency** | [Panth Infotech](https://www.upwork.com/agencies/1881421506131960778/) |
+| 📧 **Email** | kishansavaliyakb@gmail.com |
+| 📱 **WhatsApp** | +91 84012 70422 |
 
 ---
 
