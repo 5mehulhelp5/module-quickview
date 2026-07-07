@@ -1,8 +1,4 @@
 <?php
-/**
- * Copyright © Panth Infotech. All rights reserved.
- * View Tracker Block
- */
 declare(strict_types=1);
 
 namespace Panth\QuickView\Block\Adminhtml;
@@ -19,52 +15,20 @@ use Panth\QuickView\Model\ResourceModel\RecentlyViewed\CollectionFactory as View
 
 class ViewTracker extends Template
 {
-    /**
-     * @var ViewedCollectionFactory
-     */
     private ViewedCollectionFactory $viewedCollectionFactory;
 
-    /**
-     * @var RecentlyViewedFactory
-     */
     private RecentlyViewedFactory $viewedFactory;
 
-    /**
-     * @var ProductFactory
-     */
     private ProductFactory $productFactory;
 
-    /**
-     * @var CustomerFactory
-     */
     private CustomerFactory $customerFactory;
 
-    /**
-     * @var TimezoneInterface
-     */
     private TimezoneInterface $timezone;
 
-    /**
-     * @var ImageHelper
-     */
     private ImageHelper $imageHelper;
 
-    /**
-     * @var PriceHelper
-     */
     private PriceHelper $priceHelper;
 
-    /**
-     * @param Context $context
-     * @param ViewedCollectionFactory $viewedCollectionFactory
-     * @param RecentlyViewedFactory $viewedFactory
-     * @param ProductFactory $productFactory
-     * @param CustomerFactory $customerFactory
-     * @param TimezoneInterface $timezone
-     * @param ImageHelper $imageHelper
-     * @param PriceHelper $priceHelper
-     * @param array $data
-     */
     public function __construct(
         Context $context,
         ViewedCollectionFactory $viewedCollectionFactory,
@@ -86,36 +50,27 @@ class ViewTracker extends Template
         parent::__construct($context, $data);
     }
 
-    /**
-     * Get view tracking statistics
-     *
-     * @return array
-     */
     public function getViewStats(): array
     {
         $collection = $this->viewedCollectionFactory->create();
 
         $total = $collection->getSize();
 
-        // Views today
         $today = date('Y-m-d');
         $todayViews = $this->viewedCollectionFactory->create()
             ->addFieldToFilter('viewed_at', ['gteq' => $today . ' 00:00:00'])
             ->getSize();
 
-        // Views this week
         $weekStart = date('Y-m-d', strtotime('monday this week'));
         $weekViews = $this->viewedCollectionFactory->create()
             ->addFieldToFilter('viewed_at', ['gteq' => $weekStart . ' 00:00:00'])
             ->getSize();
 
-        // Views this month
         $monthStart = date('Y-m-01');
         $monthViews = $this->viewedCollectionFactory->create()
             ->addFieldToFilter('viewed_at', ['gteq' => $monthStart . ' 00:00:00'])
             ->getSize();
 
-        // Unique visitors
         $uniqueCustomers = $this->viewedCollectionFactory->create()
             ->addFieldToFilter('customer_id', ['notnull' => true])
             ->getSelect()
@@ -139,12 +94,6 @@ class ViewTracker extends Template
         ];
     }
 
-    /**
-     * Get most viewed products
-     *
-     * @param int $limit
-     * @return array
-     */
     public function getMostViewedProducts(int $limit = 10): array
     {
         $collection = $this->viewedCollectionFactory->create();
@@ -175,12 +124,6 @@ class ViewTracker extends Template
         return $products;
     }
 
-    /**
-     * Get recent views
-     *
-     * @param int $limit
-     * @return array
-     */
     public function getRecentViews(int $limit = 20): array
     {
         $collection = $this->viewedCollectionFactory->create()
@@ -217,11 +160,6 @@ class ViewTracker extends Template
         return $recentViews;
     }
 
-    /**
-     * Get view trend data for charts (last 30 days)
-     *
-     * @return array
-     */
     public function getViewTrendData(): array
     {
         $days = [];
@@ -253,11 +191,6 @@ class ViewTracker extends Template
         ];
     }
 
-    /**
-     * Get hourly distribution for today
-     *
-     * @return array
-     */
     public function getHourlyDistribution(): array
     {
         $hours = [];
@@ -281,12 +214,6 @@ class ViewTracker extends Template
         ];
     }
 
-    /**
-     * Get top customers by views
-     *
-     * @param int $limit
-     * @return array
-     */
     public function getTopCustomers(int $limit = 10): array
     {
         $collection = $this->viewedCollectionFactory->create();
@@ -318,12 +245,6 @@ class ViewTracker extends Template
         return $customers;
     }
 
-    /**
-     * Get time ago from date
-     *
-     * @param string|null $datetime
-     * @return string
-     */
     public function getTimeAgo(?string $datetime): string
     {
         if (!$datetime) {
@@ -349,22 +270,11 @@ class ViewTracker extends Template
         }
     }
 
-    /**
-     * Get dashboard URL
-     *
-     * @return string
-     */
     public function getDashboardUrl(): string
     {
         return $this->getUrl('quickview/dashboard/index');
     }
 
-    /**
-     * Get view record by ID
-     *
-     * @param int|string|null $id
-     * @return \Panth\QuickView\Model\RecentlyViewed|null
-     */
     public function getView($id)
     {
         if (!$id) {
@@ -379,12 +289,6 @@ class ViewTracker extends Template
         }
     }
 
-    /**
-     * Get product information
-     *
-     * @param int|null $productId
-     * @return array|null
-     */
     public function getProductInfo($productId): ?array
     {
         if (!$productId) {
@@ -419,12 +323,6 @@ class ViewTracker extends Template
         }
     }
 
-    /**
-     * Get customer information
-     *
-     * @param int|null $customerId
-     * @return array|null
-     */
     public function getCustomerInfo($customerId): ?array
     {
         if (!$customerId) {
@@ -450,13 +348,6 @@ class ViewTracker extends Template
         }
     }
 
-    /**
-     * Get view history for a product
-     *
-     * @param int $productId
-     * @param int $limit
-     * @return array
-     */
     public function getProductViewHistory(int $productId, int $limit = 10): array
     {
         $collection = $this->viewedCollectionFactory->create()
@@ -488,13 +379,6 @@ class ViewTracker extends Template
         return $history;
     }
 
-    /**
-     * Get view history for a customer
-     *
-     * @param int $customerId
-     * @param int $limit
-     * @return array
-     */
     public function getCustomerViewHistory(int $customerId, int $limit = 10): array
     {
         $collection = $this->viewedCollectionFactory->create()

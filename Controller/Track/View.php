@@ -1,8 +1,4 @@
 <?php
-/**
- * Copyright © Panth Infotech. All rights reserved.
- * Track Product View — AJAX endpoint called from product pages
- */
 declare(strict_types=1);
 
 namespace Panth\QuickView\Controller\Track;
@@ -77,7 +73,6 @@ class View implements HttpPostActionInterface, CsrfAwareActionInterface
             $customerId = $this->customerSession->isLoggedIn() ? (int)$this->customerSession->getCustomerId() : null;
             $visitorId = $this->getVisitorId();
 
-            // Check if already tracked recently (within last 5 minutes) to avoid duplicates
             $collection = $this->collectionFactory->create();
             $collection->addFieldToFilter('product_id', $productId);
             $collection->addFieldToFilter('store_id', $storeId);
@@ -92,14 +87,12 @@ class View implements HttpPostActionInterface, CsrfAwareActionInterface
             $collection->setPageSize(1);
 
             if ($collection->getSize() > 0) {
-                // Update existing record's timestamp
                 $existing = $collection->getFirstItem();
                 $existing->setData('viewed_at', date('Y-m-d H:i:s'));
                 $this->recentlyViewedResource->save($existing);
                 return $result->setData(['success' => true, 'action' => 'updated']);
             }
 
-            // Create new view record
             $view = $this->recentlyViewedFactory->create();
             $view->setData([
                 'product_id' => $productId,
