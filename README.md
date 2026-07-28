@@ -187,14 +187,14 @@ bin/magento module:status Panth_QuickView
 
 After install, open:
 ```
-Admin → Stores → Configuration → Panth Extensions → Quick View
+Admin -> Stores -> Configuration -> Panth Extensions -> Quick View
 ```
 
 ---
 
 ## Configuration
 
-Go to **Stores → Configuration → Panth Extensions → Quick View**.
+Go to **Stores -> Configuration -> Panth Extensions -> Quick View**.
 
 | Setting | Group | Default | Description |
 |---|---|---|---|
@@ -222,7 +222,7 @@ Product compare, recently viewed, and the view tracker report work out of the bo
 
 ## View Tracker Report
 
-Open **Admin → Panth Infotech → Quick View → View Tracker**.
+Open **Admin -> Panth Infotech -> Quick View -> View Tracker**.
 
 The report shows:
 
