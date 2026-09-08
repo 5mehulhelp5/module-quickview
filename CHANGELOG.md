@@ -4,6 +4,17 @@ All notable changes to this extension are documented here. The format
 is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.0.9]
+
+### Fixed
+- Quick view modal no longer renders the main product image with an empty
+  `src`. The image is now created only after a product image URL is known,
+  so product listing pages no longer carry a permanently broken image.
+- The main image keeps a real `alt` value. It uses the product name, and
+  falls back to "Product image" when the name is not available. Before this
+  the static fallback was overwritten with an empty string.
+- Luma quick view uses the same alt fallback for the main image.
+
 ## [1.0.8]
 
 ### Changed

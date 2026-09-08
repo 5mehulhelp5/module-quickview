@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
         content.innerHTML =
             '<div style="overflow-y:auto;flex:1;"><div class="qv-grid">' +
             '<div class="qv-img-area">' +
-            '<div class="qv-img-main"><img id="qv-main-img" src="' + escapeAttr(mainImg) + '" alt="' + escapeAttr(p.name) + '" /></div>' +
+            '<div class="qv-img-main"><img id="qv-main-img" src="' + escapeAttr(mainImg) + '" alt="' + escapeAttr(p.name || 'Product image') + '" /></div>' +
             thumbsHtml +
             '</div>' +
             '<div class="qv-info">' +

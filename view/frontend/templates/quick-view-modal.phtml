@@ -101,12 +101,14 @@ $quickViewUrl = $block->getQuickViewUrl();
                             <!-- Image -->
                             <div class="qv-img-area">
                                 <div class="qv-img-main">
-                                    <img :src="mainImage" alt="Product image" :alt="product?.name" />
+                                    <template x-if="mainImage">
+                                        <img :src="mainImage" :alt="product?.name || 'Product image'" />
+                                    </template>
                                 </div>
                                 <div x-show="product?.images?.length > 1" class="qv-thumbs">
                                     <template x-for="(img, i) in (product?.images || [])" :key="i">
                                         <button class="qv-thumb" :class="mainImage === img.url && 'active'" @click="mainImage = img.url">
-                                            <img :src="img.thumb_url || img.url" alt="Product thumbnail" :alt="img.alt || product?.name || 'Product image'" />
+                                            <img :src="img.thumb_url || img.url" :alt="img.alt || product?.name || 'Product image'" />
                                         </button>
                                     </template>
                                 </div>
